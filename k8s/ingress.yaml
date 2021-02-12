@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: 'nginx'
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      rewrite ^(/admin)$ $1/ permanent;
+  name: ingress-service-dev
+  namespace: default
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /admin/
+            backend:
+              serviceName: admin-cluster-ip-service-dev
+              servicePort: 4000
+          - path: /
+            backend:
+              serviceName: client-cluster-ip-service-dev
+              servicePort: 3000
