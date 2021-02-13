@@ -1,5 +1,9 @@
 # Introduction
 
+## Purpose
+
+## Project Strcture
+
 # Development
 
 # Azure
