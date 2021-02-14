@@ -6,7 +6,7 @@ metadata:
     nginx.ingress.kubernetes.io/configuration-snippet: |
       rewrite ^(/admin)$ $1/ permanent;
   name: ingress-service-dev
-  namespace: default
+  namespace: development
 spec:
   rules:
     - http:
