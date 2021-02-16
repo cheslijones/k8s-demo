@@ -8,12 +8,10 @@ spec:
   selector:
     matchLabels:
       component: client
-      environment: development
   template:
     metadata:
       labels:
         component: client
-        environment: development
     spec:
       containers:
         - name: client
@@ -29,7 +27,6 @@ spec:
   type: ClusterIP
   selector:
     component: client
-    environment: development
   ports:
     - port: 3000
       targetPort: 3000
