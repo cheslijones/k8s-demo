@@ -1,4 +1,3 @@
-#!/bin/bash
 az group create -l westus -n k8s-tut && \
 az acr create -g k8s-tut -n k8stutacr --sku Basic -l westus && \
 az keyvault create --name k8stutakv --resource-group k8s-tut -l westus && \
