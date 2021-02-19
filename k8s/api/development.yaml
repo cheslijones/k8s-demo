@@ -20,16 +20,43 @@ spec:
           ports:
             - containerPort: 5000
           env:
-            - name: PGUSER
-              value: dev_user
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: PGDATABASE
             - name: PGHOST
               value: postgres-cluster-ip-service-dev
             - name: PGPORT
-              value: "5432"
-            - name: PGDATABASE
-              value: k8s_tut_dev
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: PGPORT
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: PGUSER
             - name: PGPASSWORD
-              value: password12345
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: PGPASSWORD
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: SECRET_KEY
+            - name: DOMAIN
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: DOMAIN
+            - name: DEBUG
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: DEBUG
           volumeMounts:
             - mountPath: /mnt/file-storage
               name: file-storage-dev

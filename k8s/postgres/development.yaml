@@ -21,11 +21,20 @@ spec:
             - containerPort: 5432
           env: 
             - name: POSTGRES_DB
-              value: k8s_tut_dev
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: PGDATABASE
             - name: POSTGRES_USER
-              value: dev_user
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: PGUSER
             - name: POSTGRES_PASSWORD
-              value: password12345
+              valueFrom:
+                secretKeyRef:
+                  name: k8stut-dev-secrets
+                  key: PGPASSWORD
             - name: POSTGRES_INITDB_ARGS
               value: "-A md5"
             - name: PGDATA

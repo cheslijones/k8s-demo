@@ -20,14 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ')l1l&%#!vjbivwn+u%*ljj^p$lh89x7^1#tbia8qa5k-!4p8k)'
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ['DEBUG'] == 'True'
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
+    os.environ['DOMAIN']
 ]
 
 
@@ -40,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Third-party packages
+
+    # Apps
 ]
 
 MIDDLEWARE = [
