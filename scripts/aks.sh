@@ -63,9 +63,74 @@ resourceGroupSetup() {
 }
 
 akvIntegration() {
+
+    # set the correct context
+    kubectl config use-context ${resourceGroupName}aks
+
+    # assign variables
+    subscriptionId=$(az account show --query id -otsv)
+    aksClientId=$(az aks show -n ${resourceGroupName}aks -g $resourceGroupName --query identityProfile.kubeletidentity.clientId -otsv)
+    aksResourceGroup=$(az aks show -n k8stutaks -g k8stut --query nodeResourceGroup -otsv)
+    scope="/subscriptions/${subscriptionId}/resourcegroups/${aksResourceGroup}"
+
+    echo "Integrating Key Vault and Kubernetes Services..."
+    echo ""
+
+    # Add the helm charts for csi
     helm repo add csi-secrets-store-provider-azure \
-        https://raw.githubusercontent.com/Azure/secrets-store-csi-driver-provider-azure/master/charts
+        https://raw.githubusercontent.com/Azure/secretst-store-csi-driver-provider-azure/master/charts
+
+    # Install the helm charts
     helm install csi-secrets-store-provider-azure/csi-secrets-store-provider-azure --generate-name
+
+    # create rbac roles necessary for the integration
+    az role assignment create --role "Managed Identity Operator" --assignee $aksClientId --scope $scope
+    az role assignment create --role "Virtual Machine Contributor" --assignee $aksClientId --scope $scope
+
+    # Add the helm charts for aad-pod-identity
+    helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
+
+    # Install the helm charts
+    helm install pod-identity aad-pod-identity/aad-pod-identity
+
+    # Create identity for the integratoin
+    az identity create -g $aksResourceGroup -n AksAkvIntegrationIdentity
+
+    # Get the clientid for the new identity
+    identityClientId=$(az identity show -g $aksResourceGroup -n AksAkvIntegrationIdentity --query clientId -otsv)
+
+    # Set the GET policy for the secrets for the identity
+    az keyvault set-policy -n ${resourceGroupName}akv --secret-permissions get --spn $identityClientId
+
+    # Build the appropriate kubectl configs
+    # There are not yamls of these due to the content being dynamic
+    # and based on the AKS subscription. sed could be a possible option
+    # to find a nd replace in .yaml files though.
+    cat <<EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+    name: busybox-sleep
+    spec:
+    containers:
+    - name: busybox
+        image: busybox
+        args:
+        - sleep
+        - "1000000"
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata:
+    name: busybox-sleep-less
+    spec:
+    containers:
+    - name: busybox
+        image: busybox
+        args:
+        - sleep
+        - "1000"
+EOF
 }
 
 destoryResourceGroup() {
@@ -79,7 +144,7 @@ destoryResourceGroup() {
     [yY])
         echo "Destroying resource group..."
         echo ""
-        
+
         # Delete the group
         az aks delete -n ${resourceGroupName}aks -g $resourceGroupName
         echo ""
