@@ -146,7 +146,7 @@ destoryResourceGroup() {
         echo ""
 
         # Delete the group
-        az aks delete -n ${resourceGroupName}aks -g $resourceGroupName
+        az group delete -n $resourceGroupName
         echo ""
 
         # Make sure to purge the keys
