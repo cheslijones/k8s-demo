@@ -16,3 +16,42 @@ az identity create -g $aksResourceGroup -n AksAkvIntegrationIdentity
 identityClientId=$(az identity show -g $aksResourceGroup -n AksAkvIntegrationIdentity --query clientId -otsv)
 
 az keyvault set-policy -n ${resourceGroupName}akv --secret-permissions get --spn $identityClientId
+
+cat <<EOF | kubectl apply -f -
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+    name: test
+spec:
+    type: 0                                 
+    resourceID: <resourceId>
+    clientID: <clientId>
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+    name: azure-pod-identity-binding
+spec:
+    azureIdentity: test
+    selector: azure-pod-identity-binding-selector
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname-podid
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "true"                                        
+    keyvaultName: <akvName>
+    cloudName: ""                               
+    objects:  |
+      array:
+        - |
+          objectName: SECRETTEST             
+          objectType: secret                 
+          objectVersion: ""                        
+    tenantId: <tenantId>  
+EOF

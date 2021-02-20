@@ -142,7 +142,7 @@ destoryResourceGroup() {
 
     case $confirmDestroy in
     [yY])
-        echo "Destroying resource group..."
+        echo "Destroying resource group ${resourceGroupName}..."
         echo ""
 
         # Delete the group
