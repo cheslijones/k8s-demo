@@ -45,6 +45,7 @@ resourceGroupSetup() {
     az keyvault secret set --vault-name ${resourceGroupName}akv --name DEV-PGPASSWORD --value "password12345"
 
     # creates azure kubernetes service
+    echo "Building kuberetes cluster... take a break, this takes about five minutes..."
     az aks create -n ${resourceGroupName}aks \
         -g $resourceGroupName \
         --kubernetes-version=$k8sVersion \
@@ -96,9 +97,13 @@ akvIntegration() {
     # Create identity for the integratoin
     az identity create -g $aksResourceGroup -n AksAkvIntegrationIdentity
 
+    # pause to give time the identity to be created and query it
+    sleep 10
+
     # Get the clientid for the new identity
     identityClientId=$(az identity show -g $aksResourceGroup -n AksAkvIntegrationIdentity --query clientId -otsv)
-
+    identityResourceId=$(az identity show -g $aksResourceGroup -n AksAkvIntegrationIdentity --query id -otsv)
+    
     # Set the GET policy for the secrets for the identity
     az keyvault set-policy -n ${resourceGroupName}akv --secret-permissions get --spn $identityClientId
 
@@ -107,30 +112,60 @@ akvIntegration() {
     # and based on the AKS subscription. sed could be a possible option
     # to find a nd replace in .yaml files though.
     cat <<EOF | kubectl apply -f -
-    apiVersion: v1
-    kind: Pod
-    metadata:
-    name: busybox-sleep
-    spec:
-    containers:
-    - name: busybox
-        image: busybox
-        args:
-        - sleep
-        - "1000000"
-    ---
-    apiVersion: v1
-    kind: Pod
-    metadata:
-    name: busybox-sleep-less
-    spec:
-    containers:
-    - name: busybox
-        image: busybox
-        args:
-        - sleep
-        - "1000"
+        apiVersion: aadpodidentity.k8s.io/v1
+        kind: AzureIdentity
+        metadata:
+            name: aks-akv-identity
+        spec:
+            type: 0                                 
+            resourceID: $identityResourceId
+            clientID: $identityClientId
+        ---
+        apiVersion: aadpodidentity.k8s.io/v1
+        kind: AzureIdentityBinding
+        metadata:
+            name: aks-akv-identity-binding
+        spec:
+            azureIdentity: aks-akv-identity
+            selector: aks-akv-identity-binding-selector
 EOF
+
+    cat <<EOF | kubectl apply -f -
+        apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+        kind: SecretProviderClass
+        metadata:
+        name: aks-akv-secret-provider
+        spec:
+        provider: azure
+        parameters:
+            usePodIdentity: "true"                                        
+            keyvaultName: ${resourceGroupName}akv
+            cloudName: ""                               
+            objects:  |
+            array:
+                - |
+                    objectName: DEV-DJANGOSECRETKEY             
+                    objectType: secret                 
+                    objectVersion: ""
+                - |
+                    objectName: DEV-PGDATABASE             
+                    objectType: secret                 
+                    objectVersion: ""         
+                - |
+                    objectName: DEV-PGPASSWORD             
+                    objectType: secret                 
+                    objectVersion: ""         
+                - |
+                    objectName: DEV-PGPORT             
+                    objectType: secret                 
+                    objectVersion: ""     
+                - |
+                    objectName: DEV-PGUSER             
+                    objectType: secret                 
+                    objectVersion: ""         
+            tenantId: $tenantId
+EOF
+
 }
 
 destoryResourceGroup() {
