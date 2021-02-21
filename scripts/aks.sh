@@ -123,15 +123,15 @@ stagingEnv() {
     echo "${GREEN}Done.${NC}"
     echo ""
 
-    # Apply the postgres config yaml
-    echo "${GREEN}Setting up the postgres for staging...${NC}"
-    kubectl apply -f k8s/postgres/staging.yaml -n staging
-    echo "${GREEN}Done.${NC}"
-    echo ""
-
     # Apply the tls certificate config yaml
     echo "${GREEN}Setting up the postgres for staging...${NC}"
     kubectl apply -f k8s/tls/staging.yaml -n staging
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    # Apply the postgres config yaml
+    echo "${GREEN}Setting up the postgres for staging...${NC}"
+    kubectl apply -f k8s/postgres/staging.yaml -n staging
     echo "${GREEN}Done.${NC}"
     echo ""
 
@@ -169,7 +169,7 @@ akvIntegration() {
         https://raw.githubusercontent.com/Azure/secretst-store-csi-driver-provider-azure/master/charts
 
     # Install the helm charts
-    helm install csi-secrets-store-provider-azure/csi-secrets-store-provider-azure --generate-name
+    helm install csi-secrets-store-provider-azure/csi-secrets-store-provider-azure --generate-name -n staging
     echo "${GREEN}Done.${NC}"
     echo ""
 
@@ -185,7 +185,7 @@ akvIntegration() {
     helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
 
     # Install the helm charts
-    helm install pod-identity aad-pod-identity/aad-pod-identity
+    helm install pod-identity aad-pod-identity/aad-pod-identity -n staging
     echo "${GREEN}Done.${NC}"
     echo ""
 
@@ -219,11 +219,12 @@ akvIntegration() {
     # and based on the AKS subscription. sed could be a possible option
     # to find a nd replace in .yaml files though.
     echo "${GREEN}Create the link and storage for the keys...${NC}"
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply -n staging -f -
 apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentity
 metadata:
     name: aks-akv-identity
+    namespace: staging
 spec:
     type: 0                                 
     resourceID: $identityResourceId
@@ -233,16 +234,18 @@ apiVersion: aadpodidentity.k8s.io/v1
 kind: AzureIdentityBinding
 metadata:
     name: aks-akv-identity-binding
+    namespace: staging
 spec:
     azureIdentity: aks-akv-identity
     selector: aks-akv-identity-binding-selector
 EOF
 
-cat <<EOF | kubectl apply -f -
+cat <<EOF | kubectl apply -n staging -f -
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
 kind: SecretProviderClass
 metadata:
     name: aks-akv-secret-provider
+    namespace: staging
 spec:
     provider: azure
     parameters:

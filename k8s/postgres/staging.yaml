@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres-deployment-staging
+  namespace: staging
   labels:
     aadpodidbinding: aks-akv-identity-binding-selector
 spec:
@@ -40,26 +41,28 @@ spec:
           #   - name: PGDATA
           #     value: /var/postgresql/data
           volumeMounts:
-            - name: postgres-storage-staging
-              mountPath: /var/postgresql
-            - name: secrets-store01-inline
-              mountPath: /mnt/secrets-store
-              readOnly: true
+          - name: secrets-store01-inline
+            mountPath: /mnt/secrets-store
+            readOnly: true
+          - name: postgres-storage-staging
+            mountPath: /var/postgresql
       volumes:
-        - name: postgres-storage-staging
-          persistentVolumeClaim:
-            claimName: postgres-storage-staging
         - name: secrets-store01-inline
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
               secretProviderClass: aks-akv-secret-provider
+        - name: postgres-storage-staging
+          persistentVolumeClaim:
+            claimName: postgres-storage-staging
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres-cluster-ip-service-staging
+  namespace: staging
 spec:
   type: ClusterIP
   selector:
