@@ -1,23 +1,25 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: file-storage-dev
-  namespace: development
+  name: file-storage-staging
+  namespace: staging
 spec:
   accessModes:
     - ReadWriteMany
+  storageClassName: azurefile
   resources:
     requests:
-      storage: 10Gi
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-storage-dev
-  namespace: development
+  name: postgres-storage-staging
+  namespace: staging
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
+  storageClassName: default
   resources:
     requests:
-      storage: 10Gi
+      storage: 1Gi

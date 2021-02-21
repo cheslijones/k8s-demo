@@ -5,7 +5,7 @@ metadata:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/configuration-snippet: |
       rewrite ^(/admin)$ $1/ permanent;
-  name: ingress-service-dev
+  name: ingress-development
   namespace: development
 spec:
   rules:

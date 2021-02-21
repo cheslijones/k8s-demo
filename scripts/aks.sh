@@ -13,10 +13,12 @@ PROMPT_EOL_MARK=""
 
 echo ""
 echo "${BLUE}Select one of the following:"
-echo "[S]etup resource group and services (Container Registry, Key Vault, and Kubernetes Services)..."
-echo "[I]ntegrate Key Vaule and Kubernetes Services..."
-echo "[D]estroy the resource group (NOT RECOMMENDED)."
-printf "Response? (s/i/d)${NC} "
+echo "1. Setup resource group and services (Container Registry, Key Vault, and Kubernetes Services)..."
+echo "2. Setup Staging environment in Kubernetes Services..."
+echo "3. Setup Production environment in Kubernetes Services..."
+echo "4. Integrate Key Vaule and Kubernetes Services..."
+echo "5. Destroy the resource group (NOT RECOMMENDED)."
+printf "Selection: ${NC} "
 read -k userResponse
 echo "\n"
 
@@ -75,10 +77,69 @@ resourceGroupSetup() {
     echo "${GREEN}Done.${NC}"
     echo ""
 
+    # install ingress-nginx into the cluster
+    echo "${GREEN}Installing ingress-nginx into the cluster...${NC}"
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.44.0/deploy/static/provider/cloud/deploy.yaml
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    # install cert-manager into the cluster
+    echo "${GREEN}Installing cert-manager into the cluster...${NC}"
+    kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.2.0/cert-manager.yaml
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
     echo "${GREEN}Done creating the resource group and all services.${NC}"
     echo ""
     echo "${GREEN}At this point, you can run the ./scripts/dev.sh for your dev environment.${NC}"
-    echo "${GREEN}You can also rerun this script with the [I] option to integrate AKS and AKV.${NC}"
+    echo "${GREEN}You can also rerun this script to setup Staging and Production environments, and to integrate AKS and AKV.${NC}"
+
+}
+
+stagingEnv() {
+    echo "${GREEN}Setting up the staging environment in the AKS cluster...${NC}"
+    
+    # Switch to the correct context
+    echo "${GREEN}Switching to the correct context...${NC}"
+    kubectl config use-context ${resourceGroupName}aks
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    # Creating the staging namespace
+    echo "${GREEN}Create the staging namespace...${NC}"
+    kubectl create namespace staging
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    # Apply the storage config yaml
+    echo "${GREEN}Setting up the storage for staging...${NC}"
+    kubectl apply -f k8s/storage/staging.yaml -n staging
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    # Apply the ingress config yaml
+    echo "${GREEN}Setting up the ingress for staging...${NC}"
+    kubectl apply -f k8s/ingress/staging.yaml -n staging
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    # Apply the postgres config yaml
+    echo "${GREEN}Setting up the postgres for staging...${NC}"
+    kubectl apply -f k8s/postgres/staging.yaml -n staging
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    # Apply the tls certificate config yaml
+    echo "${GREEN}Setting up the postgres for staging...${NC}"
+    kubectl apply -f k8s/tls/staging.yaml -n staging
+    echo "${GREEN}Done.${NC}"
+    echo ""
+
+    echo "${GREEN}Done setting up the staging environment.${NC}"
+
+}
+
+productionEnv() {
 
 }
 
@@ -98,6 +159,7 @@ akvIntegration() {
     aksClientId=$(az aks show -n ${resourceGroupName}aks -g $resourceGroupName --query identityProfile.kubeletidentity.clientId -otsv)
     aksResourceGroup=$(az aks show -n k8stutaks -g k8stut --query nodeResourceGroup -otsv)
     scope="/subscriptions/${subscriptionId}/resourcegroups/${aksResourceGroup}"
+    tenantId=$(az account show --query tenantId -otsv)
     echo "${GREEN}Done.${NC}"
     echo ""
 
@@ -263,13 +325,19 @@ destoryResourceGroup() {
 }
 
 case $userResponse in
-[sS])
+[1])
     resourceGroupSetup
     ;;
-[iI])
+[2])
+    stagingEnv
+    ;;
+[3])
+    productionEnv
+    ;;
+[4])
     akvIntegration
     ;;
-[dD])
+[5])
     destoryResourceGroup
     ;;
 *)

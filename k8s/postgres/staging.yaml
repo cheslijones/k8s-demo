@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment-staging
+  labels:
+    aadpodidbinding: aks-akv-identity-binding-selector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: postgres
+  template:
+    metadata:
+      labels:
+        component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13-alpine
+          ports:
+            - containerPort: 5432
+          # env: 
+          #   - name: POSTGRES_DB
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: app-prod-secrets
+          #         key: PGDATABASE
+          #   - name: POSTGRES_USER
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: app-prod-secrets
+          #         key: PGUSER
+          #   - name: POSTGRES_PASSWORD
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: app-prod-secrets
+          #         key: PGPASSWORD
+          #   - name: POSTGRES_INITDB_ARGS
+          #     value: "-A md5"
+          #   - name: PGDATA
+          #     value: /var/postgresql/data
+          volumeMounts:
+            - name: postgres-storage-staging
+              mountPath: /var/postgresql
+            - name: secrets-store01-inline
+              mountPath: /mnt/secrets-store
+              readOnly: true
+      volumes:
+        - name: postgres-storage-staging
+          persistentVolumeClaim:
+            claimName: postgres-storage-staging
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: aks-akv-secret-provider
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-cluster-ip-service-staging
+spec:
+  type: ClusterIP
+  selector:
+    component: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
