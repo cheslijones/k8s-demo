@@ -72,9 +72,13 @@ resourceGroupSetup() {
     # switch to the context of the new aks cluster
     echo "${GREEN}Switching to the correct context...${NC}"
     az aks get-credentials -n ${resourceGroupName}aks -g $resourceGroupName
+    echo "${GREEN}Done.${NC}"
     echo ""
 
     echo "${GREEN}Done creating the resource group and all services.${NC}"
+    echo ""
+    echo "${GREEN}At this point, you can run the ./scripts/dev.sh for your dev environment.${NC}"
+    echo "${GREEN}You can also rerun this script with the [I] option to integrate AKS and AKV.${NC}"
 
 }
 
@@ -89,7 +93,7 @@ akvIntegration() {
     echo ""
 
     # assign variables
-    echo "${GREEN}Settings variables...${NC}"
+    echo "${GREEN}Setting variables...${NC}"
     subscriptionId=$(az account show --query id -otsv)
     aksClientId=$(az aks show -n ${resourceGroupName}aks -g $resourceGroupName --query identityProfile.kubeletidentity.clientId -otsv)
     aksResourceGroup=$(az aks show -n k8stutaks -g k8stut --query nodeResourceGroup -otsv)
@@ -130,10 +134,10 @@ akvIntegration() {
     echo ""
 
     # pause to give time the identity to be created and query it
-    echo "${GREEN}Taking a break while Pods are spinning up and identities are being created...${NC}"
-    sleep 10
-    echo "${GREEN}Done.${NC}"
-    echo ""
+    # echo "${GREEN}Taking a break while Pods are spinning up and identities are being created...${NC}"
+    # sleep 10
+    # echo "${GREEN}Done.${NC}"
+    # echo ""
 
     # Get the clientid for the new identity
     echo "${GREEN}Declare vars related to the new identity...${NC}"
@@ -153,66 +157,76 @@ akvIntegration() {
     # and based on the AKS subscription. sed could be a possible option
     # to find a nd replace in .yaml files though.
     echo "${GREEN}Create the link and storage for the keys...${NC}"
-    cat <<EOF | kubectl apply -f -
-        apiVersion: aadpodidentity.k8s.io/v1
-        kind: AzureIdentity
-        metadata:
-            name: aks-akv-identity
-        spec:
-            type: 0                                 
-            resourceID: $identityResourceId
-            clientID: $identityClientId
-        ---
-        apiVersion: aadpodidentity.k8s.io/v1
-        kind: AzureIdentityBinding
-        metadata:
-            name: aks-akv-identity-binding
-        spec:
-            azureIdentity: aks-akv-identity
-            selector: aks-akv-identity-binding-selector
+cat <<EOF | kubectl apply -f -
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+    name: aks-akv-identity
+spec:
+    type: 0                                 
+    resourceID: $identityResourceId
+    clientID: $identityClientId
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+    name: aks-akv-identity-binding
+spec:
+    azureIdentity: aks-akv-identity
+    selector: aks-akv-identity-binding-selector
 EOF
 
-    cat <<EOF | kubectl apply -f -
-        apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
-        kind: SecretProviderClass
-        metadata:
-            name: aks-akv-secret-provider
-        spec:
-            provider: azure
-            parameters:
-                usePodIdentity: "true"                                        
-                keyvaultName: ${resourceGroupName}akv
-                cloudName: ""                               
-                objects:  |
-                    array:
-                        - |
-                            objectName: DEV-DJANGOSECRETKEY             
-                            objectType: secret                 
-                            objectVersion: ""
-                        - |
-                            objectName: DEV-PGDATABASE             
-                            objectType: secret                 
-                            objectVersion: ""         
-                        - |
-                            objectName: DEV-PGPASSWORD             
-                            objectType: secret                 
-                            objectVersion: ""         
-                        - |
-                            objectName: DEV-PGPORT             
-                            objectType: secret                 
-                            objectVersion: ""     
-                        - |
-                            objectName: DEV-PGUSER             
-                            objectType: secret                 
-                            objectVersion: ""         
-                tenantId: $tenantId
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+    name: aks-akv-secret-provider
+spec:
+    provider: azure
+    parameters:
+        usePodIdentity: "true"                                        
+        keyvaultName: ${resourceGroupName}akv
+        cloudName: ""                               
+        objects:  |
+            array:
+                - |
+                    objectName: DEV-DJANGOSECRETKEY             
+                    objectType: secret                 
+                    objectVersion: ""
+                - |
+                    objectName: DEV-PGDATABASE             
+                    objectType: secret                 
+                    objectVersion: ""         
+                - |
+                    objectName: DEV-PGPASSWORD             
+                    objectType: secret                 
+                    objectVersion: ""         
+                - |
+                    objectName: DEV-PGPORT             
+                    objectType: secret                 
+                    objectVersion: ""     
+                - |
+                    objectName: DEV-PGUSER             
+                    objectType: secret                 
+                    objectVersion: ""         
+        tenantId: $tenantId
 EOF
-    echo "${GREEN}Donekeys.${NC}"
+    echo "${GREEN}Done.${NC}"
     echo ""
 
     echo "${GREEN}Done with the AKS and AKV integration.${NC}"
     echo ""
-    echo "${GREEN}Give it a few minutes and then run: kubectl apply -f k8s/test/nginx.yaml${NC}"
+    echo "${GREEN}Run 'kubectl get pods' and make sure the Pods are running.${NC}"
+    echo "${GREEN}When they are, run the following command:${NC}"
+    echo ""
+    echo "${GREEN}kubectl apply -f k8s/test/nginx.yaml${NC}"
+    echo ""
+    echo "${GREEN}It should take about a minute for the Pod to startup. ${NC}"
+    echo ""
+    echo "${GREEN}After it has started, you can run the following command to verify the Pod has access to secrets: ${NC}"
+    echo ""
+    echo "${GREEN}kubectl exec -it nginx -- cat /mnt/secrets-store/DEV-PGDATABASE${NC}"
+    echo 
 }
 
 destoryResourceGroup() {
@@ -224,11 +238,8 @@ destoryResourceGroup() {
 
     case $confirmDestroy in
     [yY])
-        echo "${RED}Destroying resource group ${resourceGroupName}...${NC}"
-        echo ""
-
         # Delete the group
-        echo "${RED}Deleting resource group ${resourceGroupName}...${NC}"
+        echo "${RED}Destroying the resource group ${resourceGroupName}... take a break, this will take about 10 minutes...${NC}"
         az group delete -n $resourceGroupName
         echo "${RED}Done.${NC}"
         echo ""
