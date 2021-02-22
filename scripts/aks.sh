@@ -211,7 +211,7 @@ akvIntegration() {
     # Set the GET policy for the secrets for the identity
     echo "${GREEN}Give the new identity GET privileges to the AKV keys...${NC}"
     az keyvault set-policy -n ${resourceGroupName}akv --secret-permissions get --spn $identityClientId
-    echo "${GREEN}Done.${NC}"
+    echo "${GREEN}Done..${NC}"
     echo ""
 
     # Build the appropriate kubectl configs
