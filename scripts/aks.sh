@@ -199,7 +199,7 @@ akvIntegration() {
     # echo "${GREEN}Taking a break while Pods are spinning up and identities are being created...${NC}"
     # sleep 10
     # echo "${GREEN}Done.${NC}"
-    # echo ""
+    # echo ""/
 
     # Get the clientid for the new identity
     echo "${GREEN}Declare vars related to the new identity...${NC}"
