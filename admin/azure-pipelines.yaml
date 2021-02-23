@@ -28,7 +28,7 @@ variables:
 
 stages:
   - stage: Trigger
-    diplayName: Testing Trigger
+    displayName: Testing Trigger
 
   # - stage: Build
   #   displayName: Build stage

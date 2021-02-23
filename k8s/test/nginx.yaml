@@ -2,7 +2,7 @@ kind: Pod
 apiVersion: v1
 metadata:
   name: nginx
-  namespace: staging
+  namespace: production
   labels:
     aadpodidbinding: aks-akv-identity-binding-selector
 spec:
