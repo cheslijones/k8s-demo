@@ -9,7 +9,7 @@ trigger:
     - production
   paths:
     include:
-    - admin/*
+    - admin
 
 resources:
   - repo: self
