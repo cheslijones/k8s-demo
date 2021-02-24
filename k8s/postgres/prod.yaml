@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment-production
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: postgres
+  template:
+    metadata:
+      labels:
+        component: postgres
+        aadpodidbinding: aks-akv-identity-binding-selector
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:13-alpine
+          ports:
+            - containerPort: 5432
+          env: 
+            - name: POSTGRES_DB_FILE
+              value: /mnt/secrets-store/DEV-PGDATABASE
+            - name: POSTGRES_USER_FILE
+              value: /mnt/secrets-store/DEV-PGUSER
+            - name: POSTGRES_PASSWORD_FILE
+              value: /mnt/secrets-store/DEV-PGPASSWORD
+            - name: POSTGRES_INITDB_ARGS
+              value: "-A md5"
+            - name: PGDATA
+              value: /var/postgresql/data
+          volumeMounts:
+          - name: secrets-store01-inline
+            mountPath: /mnt/secrets-store
+            readOnly: true
+          - name: postgres-storage-production
+            mountPath: /var/postgresql
+      volumes:
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: aks-akv-secret-provider
+        - name: postgres-storage-production
+          persistentVolumeClaim:
+            claimName: postgres-storage-production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-cluster-ip-service-production
+  namespace: production
+spec:
+  type: ClusterIP
+  selector:
+    component: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

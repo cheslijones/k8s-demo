@@ -7,17 +7,17 @@ k8sVersion="1.19.7"
 # formats
 RED="\033[0;31m"
 GREEN="\033[0;32m"
-BLUE="\033[0;36m"
+BLUE="\033[0;34m"
 NC="\033[0m"
 PROMPT_EOL_MARK=""
 
 echo ""
 echo "${BLUE}Select one of the following:"
-echo "[S]etup dev environment (creates a new minikube cluster from scratch and everything in it)..."
-echo "[R]efresh cluster (creates storage, secrets, local dependencies)..."
-echo "[C]lean cluster (deletes storage, secrets, local dependencies)..."
-echo "[D]estroy cluster (deletes minikube container and everything in it)..."
-printf "Response? (s/r/c/d)${NC} "
+echo "1. Setup dev environment (creates a new minikube cluster from scratch and everything in it)..."
+echo "2. Refresh cluster (creates storage, secrets, local dependencies)..."
+echo "3. Clean cluster (deletes storage, secrets, local dependencies)..."
+echo "4. Destroy cluster (deletes minikube container and everything in it)..."
+printf "Selection: ${NC} "
 read -k userResponse
 echo "\n"
 
@@ -43,7 +43,7 @@ standardSetup() {
 
     # create storage for postgresql and files
     echo "${GREEN}Creating storage...${NC}"
-    kubectl apply -f k8s/storage/development.yaml -n development
+    kubectl apply -f k8s/storage/dev.yaml -n development
     echo "${GREEN}Done.${NC}"
     echo ""
 
@@ -190,7 +190,7 @@ clean() {
 
         # delete storage from the cluster
         echo "${RED}Delete storage...${NC}"
-        kubectl delete -f k8s/storage/development.yaml -n development
+        kubectl delete -f k8s/storage/dev.yaml -n development
         echo "${RED}Done.${NC}"
         echo ""
 
