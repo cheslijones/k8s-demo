@@ -272,19 +272,19 @@ productionEnv() {
 
     # Apply the storage config yaml
     echo "${GREEN}Setting up the storage for production...${NC}"
-    kubectl apply -f k8s/storage/prod.yaml -n production
+    kubectl apply -f k8s/production/storage.yaml -n production
     echo "${GREEN}Done.${NC}"
     echo ""
 
     # Apply the ingress config yaml
     echo "${GREEN}Setting up the ingress for production...${NC}"
-    kubectl apply -f k8s/ingress/prod.yaml -n production
+    kubectl apply -f k8s/production/ingress.yaml -n production
     echo "${GREEN}Done.${NC}"
     echo ""
 
     # Apply the tls certificate config yaml
     echo "${GREEN}Setting up the postgres for production...${NC}"
-    kubectl apply -f k8s/tls/prod.yaml -n production
+    kubectl apply -f k8s/production/tls.yaml -n production
     echo "${GREEN}Done.${NC}"
     echo ""
 
@@ -296,13 +296,13 @@ productionEnv() {
 
     # Apply the postgres config yaml
     echo "${GREEN}Setting up the postgres for production...${NC}"
-    kubectl apply -f k8s/postgres/prod.yaml -n production
+    kubectl apply -f k8s/production/postgres.yaml -n production
     echo "${GREEN}Done.${NC}"
     echo ""
 
     # Apply the ingress config yaml
     echo "${GREEN}Setting up the ingress for production...${NC}"
-    kubectl apply -f k8s/ingress/prod.yaml -n production
+    kubectl apply -f k8s/production/ingress.yaml -n production
     echo "${GREEN}Done.${NC}"
     echo ""
 

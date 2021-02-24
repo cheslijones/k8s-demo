@@ -59,9 +59,9 @@ build:
 deploy:
   kubectl:
     manifests:
-      - k8s/ingress/dev.yaml 
-      - k8s/postgres/dev.yaml
-      - k8s/admin/dev.yaml
-      - k8s/client/dev.yaml
-      - k8s/api/dev.yaml
+      - k8s/development/ingress
+      - k8s/development/postgres
+      - k8s/development/admin
+      - k8s/development/client
+      - k8s/development/api
     defaultNamespace: development

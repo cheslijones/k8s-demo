@@ -43,7 +43,7 @@ standardSetup() {
 
     # create storage for postgresql and files
     echo "${GREEN}Creating storage...${NC}"
-    kubectl apply -f k8s/storage/dev.yaml -n development
+    kubectl apply -f k8s/development/storage.yaml -n development
     echo "${GREEN}Done.${NC}"
     echo ""
 
@@ -190,7 +190,7 @@ clean() {
 
         # delete storage from the cluster
         echo "${RED}Delete storage...${NC}"
-        kubectl delete -f k8s/storage/dev.yaml -n development
+        kubectl delete -f k8s/development/storage.yaml -n development
         echo "${RED}Done.${NC}"
         echo ""
 
